@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>올리브영 납품 시뮬레이터</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕',sans-serif;background:#F4F6F8;color:#222;padding:16px}
+.container{max-width:960px;margin:0 auto;width:100%}
+h1{font-size:18px;font-weight:700;color:#1F3864;margin-bottom:4px}
+.subtitle{font-size:12px;color:#888;margin-bottom:20px}
+.save-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.save-btn{background:#1F3864;color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.save-btn:hover{background:#2E5090}
+.reset-btn{background:#fff;color:#888;border:1px solid #ddd;border-radius:8px;padding:7px 14px;font-size:12px;cursor:pointer;font-family:inherit}
+#save-msg{font-size:11px;color:#27500A;font-weight:600}
+.section{background:#fff;border-radius:14px;padding:16px 20px;margin-bottom:14px;border:1px solid #E8EAF0}
+.sec-title{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.pgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.igrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field label{font-size:10px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field-inner{display:flex;align-items:center;background:#F4F6F8;border-radius:8px;border:1px solid #ddd;padding:5px 8px;gap:3px;min-width:0}
+.field-inner input{flex:1;background:transparent;border:none;outline:none;font-size:13px;font-weight:600;color:#1F3864;text-align:right;min-width:0;width:0}
+.field-inner span{font-size:11px;color:#aaa;flex-shrink:0}
+.field.sale .field-inner{border-color:#85B7EB;background:#EBF5FB}
+.field.sale label{color:#185FA5}
+.field.sale input{color:#0C447C}
+.field.minp .field-inner{border-color:#AFA9EC;background:#EEEDFE}
+.field.minp label{color:#534AB7}
+.field.minp input{color:#3C3489}
+.field.cogs .field-inner{border-color:#EF9F27;background:#FAEEDA}
+.field.cogs label{color:#854F0B}
+.field.cogs input{color:#412402}
+.field.tgt .field-inner{border-color:#9FE1CB;background:#E1F5EE}
+.field.tgt label{color:#0F6E56}
+.field.tgt input{color:#085041}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.card{min-width:0;border-radius:12px;overflow:hidden;border:2px solid #eee}
+.card-head{padding:12px 14px}
+.card-head .tier{font-size:11px;font-weight:700;color:rgba(255,255,255,.8)}
+.card-head .supply{font-size:20px;font-weight:800;color:#fff;margin-top:2px}
+.card-head .supply-lbl{font-size:10px;color:rgba(255,255,255,.6)}
+.card-body{padding:10px 14px;background:#fff;display:flex;flex-direction:column;gap:5px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:4px}
+.row .k{font-size:11px;color:#777;white-space:nowrap;flex-shrink:0}
+.row .v{font-size:11px;font-weight:500;color:#333;white-space:nowrap}
+.dl{border:none;border-top:1px solid #f0f0f0;margin:3px 0}
+.profit-box{border-radius:8px;padding:7px 10px;display:flex;justify-content:space-between;align-items:center}
+.badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:20px;font-weight:600;margin-left:4px}
+.ok{background:#EAF3DE;color:#27500A}
+.ng{background:#FAECE7;color:#993C1D}
+.qty-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.summary{background:#1F3864;border-radius:12px;padding:14px 18px;margin-bottom:14px}
+.summary-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+.sgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.sc{background:rgba(255,255,255,.1);border-radius:8px;padding:7px 10px;min-width:0;overflow:hidden}
+.sc .sk{font-size:10px;color:rgba(255,255,255,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc .sv{font-size:12px;font-weight:700;color:#fff;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mkt-wrap{border:1px solid #EF9F27;border-radius:12px;padding:12px 16px}
+.mkt-hdr{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}
+.toggle{width:32px;height:18px;background:#ccc;border-radius:9px;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:#639922}
+.thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.toggle.on .thumb{transform:translateX(14px)}
+.mkt-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.mbox{background:#FAEEDA;border:1px solid #EF9F27;border-radius:8px;padding:8px 10px}
+.mbox label{display:block;font-size:11px;color:#633806;margin-bottom:3px}
+.mbox input{width:100%;background:transparent;border:none;outline:none;font-size:14px;font-weight:600;color:#412402;text-align:right}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>올리브영 납품 시뮬레이터</h1>
+  <p class="subtitle">입력값은 브라우저에 자동 저장됩니다. 다음에 열어도 그대로 유지됩니다.</p>
+
+  <div class="save-bar">
+    <button class="save-btn" onclick="saveNow()">저장</button>
+    <button class="reset-btn" onclick="resetAll()">초기화</button>
+    <span id="save-msg"></span>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">파라미터 설정</div>
+    <div class="pgrid">
+      <div class="field"><label>OY 마진율</label><div class="field-inner"><input type="number" id="p_oy" step="0.5"><span>%</span></div></div>
+      <div class="field"><label>물류비 + EDI</label><div class="field-inner"><input type="number" id="p_lg" step="0.5"><span>%</span></div></div>
+      <div class="field sale"><label>할인분담 — 상시</label><div class="field-inner"><input type="number" id="p_ss" step="1"><span>%</span></div></div>
+      <div class="field minp"><label>할인분담 — 최저</label><div class="field-inner"><input type="number" id="p_sm" step="1"><span>%</span></div></div>
+      <div class="field tgt"><label>목표 마진율</label><div class="field-inner"><input type="number" id="p_tg" step="0.5"><span>%</span></div></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-title">단가 입력</div>
+    <div class="igrid">
+      <div class="field"><label>품명</label><div class="field-inner"><input type="text" id="i_nm" placeholder="예: 클렌징폼 A"></div></div>
+      <div class="field cogs"><label>제조원가</label><div class="field-inner"><input type="number" id="i_cg"><span>원</span></div></div>
+      <div class="field"><label>소비자가 (VAT 포함)</label><div class="field-inner"><input type="number" id="i_ms"><span>원</span></div></div>
+      <div class="field sale"><label>상시할인가 (VAT 포함)</label><div class="field-inner"><input type="number" id="i_sa"><span>원</span></div></div>
+      <div class="field minp"><label>최저할인가 (VAT 포함)</label><div class="field-inner"><input type="number" id="i_mn"><span>원</span></div></div>
+    </div>
+  </div>
+
+  <div class="cards" id="cards"></div>
+
+  <div class="summary"><div class="summary-lbl">총합 요약</div><div class="sgrid" id="sg"></div></div>
+
+  <div class="section">
+    <div class="sec-title">납품 수량</div>
+    <div class="qty-grid">
+      <div class="field"><label>소비자가 기준 (개)</label><div class="field-inner"><input type="number" id="q_ms"><span>개</span></div></div>
+      <div class="field sale"><label>상시할인가 기준 (개)</label><div class="field-inner"><input type="number" id="q_sa"><span>개</span></div></div>
+      <div class="field minp"><label>최저할인가 기준 (개)</label><div class="field-inner"><input type="number" id="q_mn"><span>개</span></div></div>
+    </div>
+  </div>
+
+  <div class="mkt-wrap">
+    <div class="mkt-hdr" onclick="toggleMkt()">
+      <div class="toggle" id="toggle"><div class="thumb"></div></div>
+      <span style="font-size:13px;font-weight:600;color:#555">마케팅 비용 반영</span>
+      <span style="font-size:11px;padding:2px 8px;border-radius:20px;background:#FAEEDA;color:#633806;font-weight:600">선택</span>
+      <span style="font-size:11px;color:#aaa">VMD · 샘플 제공 비용</span>
+    </div>
+    <div id="mkt-body" class="mkt-body" style="display:none">
+      <div class="mbox"><label>VMD 비용 총액 (원)</label><input type="number" id="i_vd"></div>
+      <div class="mbox"><label>샘플 제공 비용 총액 (원)</label><input type="number" id="i_sp"></div>
+      <div style="font-size:11px;color:#888;grid-column:1/-1;margin-top:2px">※ 총액 ÷ 수량 합계 = 단위당 마케팅 비용으로 자동 계산</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fw=n=>Math.round(n).toLocaleString('ko-KR')+'원';
+const fp=n=>(n*100).toFixed(1)+'%';
+const KEY='oy_sim_v2';
+const IDS=['p_oy','p_lg','p_ss','p_sm','p_tg','i_nm','i_cg','i_ms','i_sa','i_mn','q_ms','q_sa','q_mn','i_vd','i_sp'];
+const DEF={p_oy:35,p_lg:10,p_ss:50,p_sm:50,p_tg:15,i_nm:'',i_cg:3489,i_ms:14000,i_sa:13000,i_mn:12000,q_ms:0,q_sa:0,q_mn:0,i_vd:0,i_sp:0,use_mkt:0};
+let mktOn=false,timer=null;
+
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    const st=raw?JSON.parse(raw):DEF;
+    IDS.forEach(k=>{if($(k))$(k).value=st[k]??DEF[k];});
+    if(st.use_mkt){mktOn=true;$('toggle').classList.add('on');$('mkt-body').style.display='grid';}
+    showMsg(raw?'✓ 저장된 값 불러옴':'기본값으로 시작');
+  }catch{IDS.forEach(k=>{if($(k))$(k).value=DEF[k];});}
+  calc();
+}
+
+function saveNow(){
+  const st={use_mkt:mktOn?1:0};
+  IDS.forEach(k=>{if($(k)){const el=$(k);st[k]=el.type==='text'?el.value:(parseFloat(el.value)||0);}});
+  localStorage.setItem(KEY,JSON.stringify(st));
+  showMsg('✓ 저장됨');
+}
+
+function resetAll(){
+  if(!confirm('입력값을 모두 초기화할까요?'))return;
+  localStorage.removeItem(KEY);
+  IDS.forEach(k=>{if($(k))$(k).value=DEF[k];});
+  mktOn=false;$('toggle').classList.remove('on');$('mkt-body').style.display='none';
+  calc();showMsg('초기화됨');
+}
+
+function showMsg(txt){
+  $('save-msg').textContent=txt;
+  clearTimeout(timer);
+  timer=setTimeout(()=>$('save-msg').textContent='',3000);
+}
+
+function autoSave(){clearTimeout(timer);timer=setTimeout(saveNow,1000);}
+
+function toggleMkt(){
+  mktOn=!mktOn;
+  $('toggle').classList.toggle('on',mktOn);
+  $('mkt-body').style.display=mktOn?'grid':'none';
+  calc();autoSave();
+}
+
+function calc(){
+  const oy=parseFloat($('p_oy').value||0)/100;
+  const lg=parseFloat($('p_lg').value||0)/100;
+  const ss=parseFloat($('p_ss').value||0)/100;
+  const sm=parseFloat($('p_sm').value||0)/100;
+  const tg=parseFloat($('p_tg').value||0)/100;
+  const cg=parseFloat($('i_cg').value||0);
+  const ms=parseFloat($('i_ms').value||0);
+  const sa=parseFloat($('i_sa').value||0);
+  const mn=parseFloat($('i_mn').value||0);
+  const q0=parseFloat($('q_ms').value||0);
+  const q1=parseFloat($('q_sa').value||0);
+  const q2=parseFloat($('q_mn').value||0);
+  const qt=q0+q1+q2;
+  const vd=mktOn?parseFloat($('i_vd').value||0):0;
+  const sp=mktOn?parseFloat($('i_sp').value||0):0;
+  const mu=qt>0?(vd+sp)/qt:0;
+
+  function cv(pv,pe,sh){
+    const sup=pe*(1-oy);
+    const dr=ms>0?(ms-pv)/ms:0;
+    const da=(ms/1.1)*dr*sh;
+    const la=sup*lg;
+    const net=sup-da-la;
+    const pft=net-cg;
+    const mgn=net>0?pft/net:0;
+    const pm=pft-mu;
+    const mm=net>0?pm/net:0;
+    return{sup,dr,da,la,net,pft,mgn,pm,mm};
+  }
+
+  const nm=($('i_nm').value||'').trim();
+  const rs=[cv(ms,ms/1.1,0),cv(sa,sa/1.1,ss),cv(mn,mn/1.1,sm)];
+  const qs=[q0,q1,q2];
+  const tiers=['소비자가 기준','상시할인가 기준','최저할인가 기준 ★'];
+  const hds=['#1F3864','#1A6FA8','#534AB7'];
+  const fm=mktOn?rs.map(x=>x.mm):rs.map(x=>x.mgn);
+  const fp2=mktOn?rs.map(x=>x.pm):rs.map(x=>x.pft);
+
+  $('cards').innerHTML=rs.map((rv,i)=>{
+    const ok=fm[i]>=tg;
+    const pbg=ok?'#EAF3DE':'#FAECE7';const pfg=ok?'#27500A':'#993C1D';
+    const bg=`<span class="badge ${ok?'ok':'ng'}">${ok?'달성':'미달'}</span>`;
+    const mr=mktOn?`<hr class="dl" style="border-color:#EF9F27;border-style:dashed">
+      <div class="row"><span class="k">마케팅(단위)</span><span class="v" style="color:#854F0B">${fw(mu)}</span></div>
+      <div class="profit-box" style="background:${pbg}"><span style="font-size:11px;font-weight:600;color:${pfg}">수익액(마케팅후)</span><span style="font-size:12px;font-weight:800;color:${pfg}">${fw(rv.pm)}</span></div>`:'';
+    return`<div class="card" style="border-color:${hds[i]}">
+      <div class="card-head" style="background:${hds[i]}">
+        <div class="tier">${tiers[i]}</div>
+        ${nm?`<div style="font-size:12px;font-weight:700;color:#fff;margin-bottom:1px">${nm}</div>`:''}
+        <div class="supply">${fw(rv.sup)}</div>
+        <div class="supply-lbl">공급가</div>
+      </div>
+      <div class="card-body">
+        <div class="row"><span class="k">할인율</span><span class="v">${fp(rv.dr)}</span></div>
+        <div class="row"><span class="k">할인분담금</span><span class="v">${fw(rv.da)}</span></div>
+        <div class="row"><span class="k">물류+EDI</span><span class="v">${fw(rv.la)}</span></div>
+        <hr class="dl">
+        <div class="row"><span class="k">실수취금</span><span class="v" style="font-weight:700">${fw(rv.net)}</span></div>
+        <div class="row"><span class="k">제조원가</span><span class="v">${fw(cg)}</span></div>
+        <div class="profit-box" style="background:${pbg}">
+          <span style="font-size:11px;font-weight:600;color:${pfg}">단위 수익액</span>
+          <span style="font-size:12px;font-weight:800;color:${pfg}">${fw(rv.pft)}</span>
+        </div>
+        ${mr}
+        <div class="row" style="margin-top:2px">
+          <span class="k">수익율</span>
+          <span style="font-size:12px;font-weight:700;color:${pfg}">${fp(fm[i])}${bg}</span>
+        </div>
+        <hr class="dl">
+        <div class="row">
+          <span class="k">납품 수량</span>
+          <span style="font-size:13px;font-weight:700;color:${hds[i]}">${qs[i].toLocaleString()}개</span>
+        </div>
+        <div style="background:#D5EAF5;border-radius:7px;padding:6px 9px;display:flex;justify-content:space-between;margin-top:3px">
+          <span style="font-size:11px;font-weight:600;color:#0C447C">총 수익액</span>
+          <span style="font-size:12px;font-weight:800;color:#0C447C">${fw(fp2[i]*qs[i])}</span>
+        </div>
+      </div></div>`;
+  }).join('');
+
+  const tp=fp2.reduce((s,v,i)=>s+v*qs[i],0);
+  const tsup=rs.reduce((s,v,i)=>s+v.sup*qs[i],0);
+  const om=tsup>0?tp/tsup:0;const oo=om>=tg;
+  $('sg').innerHTML=`
+    <div class="sc"><div class="sk">수량 합계</div><div class="sv">${qt.toLocaleString()}개</div></div>
+    <div class="sc"><div class="sk">총 공급금액</div><div class="sv">${fw(tsup)}</div></div>
+    <div class="sc" style="background:rgba(${oo?'39,80,10':'153,60,29'},.45)"><div class="sk">총 수익액</div><div class="sv">${fw(tp)}</div></div>
+    <div class="sc" style="background:rgba(${oo?'39,80,10':'153,60,29'},.45)"><div class="sk">전체 수익율</div><div class="sv">${fp(om)}</div></div>`;
+}
+
+IDS.forEach(id=>{
+  const el=$(id);
+  if(el)el.addEventListener('input',()=>{calc();autoSave();});
+});
+
+load();
+</script>
+</body>
+</html>
